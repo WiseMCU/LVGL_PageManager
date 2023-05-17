@@ -5,8 +5,6 @@
 #else
 #endif
 
-#define LV_ANIM_TIME_DEFAULT    300
-
 static void drag_event_handler(lv_event_t * event);
 
 void InitMainPages(lv_obj_t* page)
@@ -14,6 +12,7 @@ void InitMainPages(lv_obj_t* page)
     lv_obj_t * obj;
     obj = lv_obj_create(page);
     lv_obj_set_size(obj, 100, 50);
+    lv_obj_align_to(obj, page, LV_ALIGN_CENTER, 0, 0);
     lv_obj_add_event_cb(obj, drag_event_handler, LV_EVENT_PRESSING, NULL);
 
     lv_obj_t * label = lv_label_create(obj);
@@ -36,4 +35,8 @@ static void drag_event_handler(lv_event_t * event)
     lv_obj_set_pos(obj, x, y);
 }
 
+
+void DeinitMainPages(lv_obj_t* page)
+{
+}
 
