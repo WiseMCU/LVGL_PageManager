@@ -9,6 +9,9 @@ static void drag_event_handler(lv_event_t * event);
 
 void InitMonthPages(lv_obj_t* page)
 {
+    lv_obj_set_style_bg_color(page, lv_palette_main(LV_PALETTE_RED), 0);
+    lv_obj_set_style_bg_opa(page, LV_OPA_100, 0);
+    
     lv_obj_t * obj;
     obj = lv_obj_create(page);
     lv_obj_set_size(obj, 100, 50);

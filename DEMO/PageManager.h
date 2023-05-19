@@ -38,7 +38,7 @@ enum PageState
 enum PageDir
 {
     // 本页面
-    PageNone = 0,
+    PageNone    = 0,
     // 上面的页面
     PageUp,
     // 下面的页面
