@@ -10,6 +10,7 @@
 //信息打印
 #define UsePrint
 #ifdef UsePrint
+#include "stdio.h"
 #define DEBUG(format, ...) printf(format, ##__VA_ARGS__)
 #else
 #define DEBUG(format, ...)
@@ -18,11 +19,9 @@
 // 管理页面大小和位置
 #define WIDTH       280
 #define HEIGHT      240
-#define POS_X       0
-#define POS_Y       0
 
 // 页面切换时间
-// #define AnimMoveTime 250
+#define AnimMoveTime 250
 
 // 页面状态
 enum PageState
@@ -38,8 +37,10 @@ enum PageState
 // 页面的位置方向
 enum PageDir
 {
+    // 本页面
+    PageNone = 0,
     // 上面的页面
-    PageUp = 0,
+    PageUp,
     // 下面的页面
     PageDown,
     // 左面的页面
@@ -52,48 +53,75 @@ enum PageDir
 enum MoveMode
 {
     // 切换动画方式
-    // 0立即切换（切换动画默认此项）
+    // 0 没有切换方式（此模式应该无法切换）
     LOAD_ANIM_NONE = 0,
-    // 1 将新页面移动朝给定方向覆盖当前的页面
-    LOAD_ANIM_OVER,
-    // 2 将旧页面从新页面上面移动朝给定方向退出屏幕
-    LOAD_ANIM_LEAVE,
-    // 3 将新页面和当前的页面一起朝给定方向移动
+    // 1 平推模式
     LOAD_ANIM_MOVE,
+    // 2 覆盖模式
+    LOAD_ANIM_OVER,
+    // 3 离开模式
+    LOAD_ANIM_LEAVE,
+    // 4 旋转模式
+    LOAD_ANIM_ROTATE,
 };
 
 // 页面结构体
 typedef struct PageNode {
     enum PageState State;
-    lv_obj_t* Page;
+    lv_obj_t* obj;
     void (*InitPage)    (lv_obj_t* page);
     void (*DeinitPage)  (lv_obj_t* page);
-    struct PageNode* Up;
-    struct PageNode* Down;
-    struct PageNode* Left;
-    struct PageNode* Right;
+    struct
+    {
+        struct PageNode* Page;
+        enum MoveMode Mode;
+    }Up;
+    struct
+    {
+        struct PageNode* Page;
+        enum MoveMode Mode;
+    }Down;
+    struct
+    {
+        struct PageNode* Page;
+        enum MoveMode Mode;
+    }Left;
+    struct
+    {
+        struct PageNode* Page;
+        enum MoveMode Mode;
+    }Right;
 }PageTypeHandle;
 
 // 初始化页面管理器
-void InitPageManager(void);
+void PM_Init(void);
 
 // 开始页面管理器
-void PageManagerStart(void);
+void PM_Satrt(PageTypeHandle* Page);
 
 // 删除页面管理器
-void DeinitPageManager(void);
+void PM_Deinit(void);
 
 // 添加页面
-void AddPage(PageTypeHandle* Page, void (*InitPage)(lv_obj_t* page), void (*DeinitPage)(lv_obj_t* page));
+void PM_AddPage(PageTypeHandle* Page, void (*InitPage)(lv_obj_t* page), void (*DeinitPage)(lv_obj_t* page));
+
+// 关闭页面
+void PM_ClosePage(PageTypeHandle* SourcePage, enum PageDir Dir);
 
 // 删除页面
-void DelPage(PageTypeHandle* Page);
+void PM_DelPage(PageTypeHandle* SourcePage, enum PageDir Dir);
 
 // 设置主页面
-void SetHomePage(PageTypeHandle* Page);
+void PM_SetHomePage(PageTypeHandle* Page);
 
 // 设置页面切换
-void SetPageMoveMode(PageTypeHandle* SourcePage, enum PageDir Dir, PageTypeHandle* TargetPage, enum MoveMode Mode);
+void PM_SetPageMoveMode(PageTypeHandle* SourcePage, enum PageDir Dir, PageTypeHandle* TargetPage, enum MoveMode Mode);
+
+// 页面切换
+void PM_PageMove(enum PageDir Dir);
+
+// 获取管理器背景层OBJ指针
+lv_obj_t* PM_GetBackGroudObj(void);
 
 #define Home        lv_scr_act()
 #define Desktop     lv_layer_top()

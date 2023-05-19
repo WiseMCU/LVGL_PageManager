@@ -4,16 +4,7 @@
 #else
 #endif
 
-// 页面动画模式
-enum BackGroundMode
-{
-    // 无背景
-    NONE,
-    // 图片背景
-    Mode1,
-    // 散点背景
-    Mode2,
-};
+void CreateBackgroud(enum BackGroundMode Mode, lv_obj_t* background);
 
 // 页面
 static PageTypeHandle PopPages;
@@ -24,81 +15,82 @@ static PageTypeHandle Page4;
 static PageTypeHandle Page5;
 static PageTypeHandle Page6;
 static PageTypeHandle Page7;
-void CreateBackgroud(enum BackGroundMode Mode);
+
 void PageManagerInit(void)
 {
-    lv_obj_remove_style_all(Home);
+    lv_obj_remove_style_all(lv_scr_act());
 
     //初始化页面管理器
-    InitPageManager();
+    PM_Init();
 
     //创建背景
-    CreateBackgroud(Mode2);
+    CreateBackgroud(Mode2, PM_GetBackGroudObj());
 
     //添加页面
-    AddPage(&MainPages, InitMainPages, DeinitMainPages);
-    SetHomePage(&MainPages);
+    PM_AddPage(&MainPages, InitMainPages, DeinitMainPages);
+    PM_AddPage(&MonthPages, InitMonthPages, DeinitMonthPages);
+    PM_AddPage(&PopPages, InitPopPages, DeinitPopPages);
 
+    PM_SetPageMoveMode(&MainPages, PageLeft, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MainPages, PageRight, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MainPages, PageUp, &PopPages, LOAD_ANIM_MOVE);
+
+    PM_SetPageMoveMode(&MonthPages, PageLeft, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MonthPages, PageRight, &MonthPages, LOAD_ANIM_MOVE);
+
+    PM_SetPageMoveMode(&PopPages, PageDown, &MonthPages, LOAD_ANIM_MOVE);
+    
     // 页面管理器开始
-    PageManagerStart();
+    PM_Satrt(&MainPages);
 }
 
 static void draw_event_cb(lv_event_t * event);
 static void add_data(lv_timer_t * timer);
-void CreateBackgroud(enum BackGroundMode Mode)
+void CreateBackgroud(enum BackGroundMode Mode, lv_obj_t* background)
 {
-    static lv_obj_t* background;
     switch(Mode)
     {
-        case NONE:
-        background = lv_obj_create(Home);
-        lv_obj_set_style_border_width(background, 0, 0);
-        lv_obj_set_style_radius(background, 0, 0);
-        lv_obj_set_style_bg_color(background, lv_color_black(), 0);
-        lv_obj_set_size(background, WIDTH, HEIGHT);
-        lv_obj_align(background, LV_ALIGN_CENTER, POS_X, POS_Y);
-        break;
+        case NONE:{
+            lv_obj_set_style_bg_color(background, lv_color_black(), 0);
+        }break;
 
-        case Mode1:
-        background = lv_img_create(Home);
-        lv_obj_set_style_border_width(background, 0, 0);
-        lv_obj_set_style_radius(background, 0, 0);
-        lv_obj_set_size(background, WIDTH, HEIGHT);
-        lv_obj_align(background, LV_ALIGN_CENTER, POS_X, POS_Y);
-        lv_img_set_src(background, &IMG);
-        break;
+        case Mode1:{
+            lv_img_t* BgImg = lv_img_create(background);
+            lv_obj_set_style_radius(BgImg, 0, 0);
+            lv_obj_set_style_pad_all(BgImg, 0, 0);
+            lv_obj_set_style_border_width(BgImg, 0, 0);
+            lv_img_set_src(BgImg, &IMG);
+            lv_obj_move_background(BgImg);
+        }break;
 
-        case Mode2:
-        // 显示点的数量
-        #define PointNum    80
-        background = lv_chart_create(Home);
-        lv_obj_set_style_border_width(background, 0, 0);
-        lv_obj_set_style_radius(background, 0, 0);
-        lv_obj_set_style_bg_color(background, lv_color_black(), 0);
-        lv_obj_set_size(background, WIDTH, HEIGHT);
-        lv_obj_align(background, LV_ALIGN_CENTER, POS_X, POS_Y);
-        lv_obj_add_event_cb(background, draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, NULL);
+        case Mode2:{
+            // 显示点的数量
+            #define PointNum    80
+            lv_obj_t * chart = lv_chart_create(background);
+            lv_obj_set_style_radius(chart, 0, 0);
+            lv_obj_set_style_pad_all(chart, 0, 0);
+            lv_obj_set_style_border_width(chart, 0, 0);
+            lv_obj_set_size(chart, LV_PCT(100), LV_PCT(100));
+            lv_obj_align(chart, LV_ALIGN_CENTER, 0, 0);
+            lv_obj_set_style_bg_color(chart, lv_color_black(), 0);
+            lv_obj_add_event_cb(chart, draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, NULL);
 
-        lv_obj_set_style_line_width(background, 0, LV_PART_ITEMS);   /*Remove the lines*/
-        lv_chart_set_type(background, LV_CHART_TYPE_SCATTER);
+            lv_obj_set_style_line_width(chart, 0, LV_PART_ITEMS);
+            lv_chart_set_type(chart, LV_CHART_TYPE_SCATTER);
 
-        lv_chart_set_div_line_count(background, 0, 0);
-        lv_chart_set_range(background, LV_CHART_AXIS_PRIMARY_X, 0, (WIDTH * 10));
-        lv_chart_set_range(background, LV_CHART_AXIS_PRIMARY_Y, 0, (HEIGHT* 10));
+            lv_chart_set_div_line_count(chart, 0, 0);
+            lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_X, 0, (WIDTH * 10));
+            lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, (HEIGHT* 10));
 
-        lv_chart_set_point_count(background, PointNum);
+            lv_chart_set_point_count(chart, PointNum);
 
-        lv_chart_series_t * ser = lv_chart_add_series(background, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
-        for(uint32_t i = 0; i < PointNum; i++) {
-            lv_chart_set_next_value2(background, lv_chart_get_series_next(background, NULL), lv_rand(0,(WIDTH * 10)), lv_rand(0,(HEIGHT* 10)));
-        }
-        lv_timer_create(add_data, 50, background);
-        break;
-
-        default:
-        break;
+            lv_chart_series_t * ser = lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
+            for(uint32_t i = 0; i < PointNum; i++) {
+                lv_chart_set_next_value2(chart, lv_chart_get_series_next(chart, NULL), lv_rand(0,(WIDTH * 10)), lv_rand(0,(HEIGHT* 10)));
+            }
+            lv_timer_create(add_data, 50, chart);
+        }break;
     }
-    lv_obj_move_background(background);
 }
 
 static void draw_event_cb(lv_event_t * event)

@@ -24,5 +24,15 @@ void DeinitMonthPages(lv_obj_t* page);
 void InitPopPages(lv_obj_t* page);
 void DeinitPopPages(lv_obj_t* page);
 
+// 页面动画模式
+enum BackGroundMode
+{
+    // 无背景
+    NONE,
+    // 图片背景
+    Mode1,
+    // 散点背景
+    Mode2,
+};
 
 #endif
