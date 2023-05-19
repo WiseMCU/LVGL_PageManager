@@ -20,8 +20,12 @@
 #define WIDTH       280
 #define HEIGHT      240
 
+// 页面切换的触发阈值
+#define HorLimit    (WIDTH / 8 * 3)
+#define VerLimit    (HEIGHT / 8 * 3)
+
 // 页面切换时间
-#define AnimMoveTime 250
+#define AnimMoveSpeed   20
 
 // 页面状态
 enum PageState
