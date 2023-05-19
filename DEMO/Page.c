@@ -32,14 +32,14 @@ void PageManagerInit(void)
     PM_AddPage(&PopPages, InitPopPages, DeinitPopPages);
 
     PM_SetPageMoveMode(&MainPages, PageLeft, &MonthPages, LOAD_ANIM_MOVE);
-    PM_SetPageMoveMode(&MainPages, PageRight, &PopPages, LOAD_ANIM_MOVE);
     PM_SetPageMoveMode(&MainPages, PageUp, &PopPages, LOAD_ANIM_MOVE);
-    PM_SetPageMoveMode(&MainPages, PageDown, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MainPages, PageDown, &PopPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MainPages, PageRight, &MonthPages, LOAD_ANIM_MOVE);
 
-    // PM_SetPageMoveMode(&MonthPages, PageLeft, &MonthPages, LOAD_ANIM_MOVE);
-    // PM_SetPageMoveMode(&MonthPages, PageRight, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MonthPages, PageLeft, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MonthPages, PageRight, &MonthPages, LOAD_ANIM_MOVE);
 
-    // PM_SetPageMoveMode(&PopPages, PageDown, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&PopPages, PageDown, &PopPages, LOAD_ANIM_MOVE);
     
     // 页面管理器开始
     PM_Satrt(&MainPages);

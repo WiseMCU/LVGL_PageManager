@@ -47,6 +47,9 @@ static void drag_event_handler(lv_event_t * event)
 
         case LV_EVENT_RELEASED:{
         }break;
+
+        default:{
+        }break;
     }
 }
 

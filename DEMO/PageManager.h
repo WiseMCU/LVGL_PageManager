@@ -21,11 +21,11 @@
 #define HEIGHT      240
 
 // 页面切换的触发阈值
-#define HorLimit    (WIDTH / 8 * 3)
-#define VerLimit    (HEIGHT / 8 * 3)
+#define HorLimit    (WIDTH / 8 * 2)
+#define VerLimit    (HEIGHT / 8 * 2)
 
 // 页面切换时间
-#define AnimMoveSpeed   20
+#define AnimMoveSpeed   800
 
 // 页面状态
 enum PageState
