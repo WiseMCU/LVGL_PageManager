@@ -25,7 +25,7 @@
 #define VerLimit    (HEIGHT / 8 * 2)
 
 // 页面切换时间
-#define AnimMoveSpeed   800
+#define AnimMoveSpeed   200
 
 // 页面状态
 enum PageState

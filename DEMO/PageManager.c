@@ -392,14 +392,27 @@ static void draging_event_handler(lv_event_t * event)
     PageManager.pos_x += vect.x;
     PageManager.pos_y += vect.y;
 
+    lv_coord_t xBuf = PageManager.pos_x + xStart;
+    lv_coord_t yBuf = PageManager.pos_y + yStart;
+
+    if(xBuf > WIDTH)
+    {
+        xBuf = WIDTH;
+    }
+
+    if(yBuf > HEIGHT)
+    {
+        yBuf = HEIGHT;
+    }
+
     switch(PageManager.State)
     {
         case LV_DIR_LEFT:{
-            DEBUG("LV_DIR_LEFT [%d]\r\n", (PageManager.pos_x + xStart));
-            if((PageManager.pos_x + xStart) > 0)
+            DEBUG("LV_DIR_LEFT [%d]\r\n", xBuf);
+            if(xBuf > 0)
             {
                 PageManager.MoveDir = PageLeft;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, xBuf);
             }else{
                 if(PageManager.MoveDir == PageLeft)
                 {
@@ -410,27 +423,27 @@ static void draging_event_handler(lv_event_t * event)
         }break;
 
         case LV_DIR_RIGHT:{
-            DEBUG("LV_DIR_RIGHT [%d]\r\n", (PageManager.pos_x + xStart));
-            if((PageManager.pos_x + xStart) < 0)
+            DEBUG("LV_DIR_RIGHT [%d]\r\n", xBuf);
+            if(xBuf < 0)
             {
                 PageManager.MoveDir = PageRight;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, xBuf);
             }else{
                 if(PageManager.MoveDir == PageRight)
                 {
                     PageMoveDistance(PageManager.MoveDir, 0);
                 }
                 PageManager.MoveDir = PageNone;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, xBuf);
             }
         }break;
 
         case LV_DIR_TOP:{
             DEBUG("LV_DIR_TOP [%d]\r\n", PageManager.pos_y);
-            if((PageManager.pos_y + yStart) > 0)
+            if(yBuf > 0)
             {
                 PageManager.MoveDir = PageUp;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, yBuf);
             }else{
                 if(PageManager.MoveDir == PageUp)
                 {
@@ -442,10 +455,10 @@ static void draging_event_handler(lv_event_t * event)
 
         case LV_DIR_BOTTOM:{
             DEBUG("LV_DIR_BOTTOM [%d]\r\n", PageManager.pos_y);
-            if((PageManager.pos_y + yStart) < 0)
+            if(yBuf < 0)
             {
                 PageManager.MoveDir = PageDown;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, yBuf);
             }else{
                 if(PageManager.MoveDir == PageDown)
                 {
@@ -456,50 +469,50 @@ static void draging_event_handler(lv_event_t * event)
         }break;
 
         case LV_DIR_HOR:{
-            DEBUG("LV_DIR_HOR [%d] [%d]\r\n", (PageManager.pos_x + xStart), PageManager.MoveDir);
-            if((PageManager.pos_x + xStart) > 0)
+            DEBUG("LV_DIR_HOR [%d] [%d]\r\n", xBuf, PageManager.MoveDir);
+            if(xBuf > 0)
             {
                 if(PageManager.MoveDir == PageRight)
                 {
-                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
+                    PageMoveDistance(PageManager.MoveDir, xBuf);
                 }
                 PageManager.MoveDir = PageLeft;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
-            }else if((PageManager.pos_x + xStart) < 0)
+                PageMoveDistance(PageManager.MoveDir, xBuf);
+            }else if(xBuf < 0)
             {
                 if(PageManager.MoveDir == PageLeft)
                 {
-                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
+                    PageMoveDistance(PageManager.MoveDir, xBuf);
                 }
                 PageManager.MoveDir = PageRight;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, xBuf);
             }else{
                 PageManager.MoveDir = PageNone;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, xBuf);
             }
         }break;
 
         case LV_DIR_VER:{
             DEBUG("LV_DIR_VER [%d]\r\n", PageManager.pos_y);
-            if((PageManager.pos_y + yStart) > 0)
+            if(yBuf > 0)
             {
                 if(PageManager.MoveDir == PageDown)
                 {
-                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
+                    PageMoveDistance(PageManager.MoveDir, yBuf);
                 }
                 PageManager.MoveDir = PageUp;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
-            }else if((PageManager.pos_y + yStart) < 0)
+                PageMoveDistance(PageManager.MoveDir, yBuf);
+            }else if(yBuf < 0)
             {
                 if(PageManager.MoveDir == PageUp)
                 {
-                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
+                    PageMoveDistance(PageManager.MoveDir, yBuf);
                 }
                 PageManager.MoveDir = PageDown;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, yBuf);
             }else{
                 PageManager.MoveDir = PageNone;
-                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, yBuf);
             }
         }break;
 

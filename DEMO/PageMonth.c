@@ -9,6 +9,7 @@ static void drag_event_handler(lv_event_t * event);
 
 void InitMonthPages(lv_obj_t* page)
 {
+    // 如果要看背景需要注释掉下面两行
     lv_obj_set_style_bg_color(page, lv_palette_main(LV_PALETTE_RED), 0);
     lv_obj_set_style_bg_opa(page, LV_OPA_100, 0);
     
