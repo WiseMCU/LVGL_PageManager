@@ -7,9 +7,9 @@
 void CreateBackgroud(enum BackGroundMode Mode, lv_obj_t* background);
 
 // 页面
-static PageTypeHandle PopPages;
-static PageTypeHandle MainPages;
-static PageTypeHandle MonthPages;
+PageTypeHandle PopPages;
+PageTypeHandle MainPages;
+PageTypeHandle MonthPages;
 static PageTypeHandle Page3;
 static PageTypeHandle Page4;
 static PageTypeHandle Page5;
@@ -36,10 +36,10 @@ void PageManagerInit(void)
     PM_SetPageMoveMode(&MainPages, PageDown, &PopPages, LOAD_ANIM_MOVE);
     PM_SetPageMoveMode(&MainPages, PageRight, &MonthPages, LOAD_ANIM_MOVE);
 
-    PM_SetPageMoveMode(&MonthPages, PageLeft, &MonthPages, LOAD_ANIM_MOVE);
-    PM_SetPageMoveMode(&MonthPages, PageRight, &MonthPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MonthPages, PageLeft, &MainPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&MonthPages, PageRight, &MainPages, LOAD_ANIM_MOVE);
 
-    PM_SetPageMoveMode(&PopPages, PageDown, &PopPages, LOAD_ANIM_MOVE);
+    PM_SetPageMoveMode(&PopPages, PageDown, &MainPages, LOAD_ANIM_MOVE);
     
     // 页面管理器开始
     PM_Satrt(&MainPages);

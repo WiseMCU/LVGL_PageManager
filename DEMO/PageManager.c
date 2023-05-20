@@ -1,5 +1,8 @@
 ﻿#include "PageManager.h"
 
+extern PageTypeHandle PopPages;
+extern PageTypeHandle MainPages;
+extern PageTypeHandle MonthPages;
 struct
 {
     // 实际运动方向
@@ -104,16 +107,16 @@ static lv_obj_t* GetDirObj(PageTypeHandle* Page, enum PageDir Dir)
     return Pagebuf->obj;
 }
 
-// static uint8_t GetDirState(PageTypeHandle* Page, enum PageDir Dir)
-// {
-//     PageTypeHandle* Pagebuf = GetDirPage(Page, Dir);
-//     if(Pagebuf == NULL)
-//     {
-//         DEBUG("GetDirState Failed DirPage[%d] Is Null\r\n", Dir);
-//         return INVAILD;
-//     }
-//     return Pagebuf->State;
-// }
+static uint8_t GetDirState(PageTypeHandle* Page, enum PageDir Dir)
+{
+    PageTypeHandle* Pagebuf = GetDirPage(Page, Dir);
+    if(Pagebuf == NULL)
+    {
+        DEBUG("GetDirState Failed DirPage[%d] Is Null\r\n", Dir);
+        return INVAILD;
+    }
+    return Pagebuf->State;
+}
 
 static uint8_t GetDirMode(PageTypeHandle* Page, enum PageDir Dir)
 {
@@ -175,61 +178,71 @@ static void SetDirMode(PageTypeHandle* Page, enum PageDir Dir, enum MoveMode Mod
     }
 }
 
-static void PageMoveDistance(PageTypeHandle* Page, enum PageDir Dir, lv_coord_t Distance)
+static void PageMoveDistance(enum PageDir Dir, lv_coord_t Distance)
 {
-    switch(GetDirMode(Page, Dir))
+    PageTypeHandle* SourcePage = PageManager.HomePage;
+    PageTypeHandle* TargetPage = GetDirPage(PageManager.HomePage, Dir);
+
+    if(TargetPage == SourcePage)
     {
-        case LOAD_ANIM_NONE:{
-            if(Distance == 0)
+        if(Distance == 0)
+        {
+            // 直接复位画面
+            DEBUG("HomePage Reset ");
+            lv_obj_set_pos(SourcePage->obj, 0, 0);
+            if(PageManager.Dir & LV_DIR_HOR)
             {
-                // 直接复位画面
-                lv_obj_set_pos(Page->obj, 0, 0);
-                if(PageManager.Dir & LV_DIR_HOR)
+                if(PageManager.Dir & LV_DIR_LEFT)
                 {
-                    if(PageManager.Dir & LV_DIR_LEFT)
-                    {
-                        lv_obj_align_to(Page->Left.Page->obj, Page->obj, LV_ALIGN_CENTER, lv_obj_get_width(Page->obj), 0);
-                    }
-                    if(PageManager.Dir & LV_DIR_RIGHT)
-                    {
-                        lv_obj_align_to(Page->Right.Page->obj, Page->obj, LV_ALIGN_CENTER, -lv_obj_get_width(Page->obj), 0);
-                    }
-                }else{
-                    if(PageManager.Dir & LV_DIR_TOP)
-                    {
-                        lv_obj_align_to(Page->Up.Page->obj, Page->obj, LV_ALIGN_CENTER, 0, -lv_obj_get_height(Page->obj));
-                    }
-                    if(PageManager.Dir & LV_DIR_BOTTOM)
-                    {
-                        lv_obj_align_to(Page->Down.Page->obj, Page->obj, LV_ALIGN_CENTER, 0, lv_obj_get_height(Page->obj));
-                    }
+                    lv_obj_align_to(SourcePage->Left.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, lv_obj_get_width(SourcePage->obj), 0);
+                }
+                if(PageManager.Dir & LV_DIR_RIGHT)
+                {
+                    lv_obj_align_to(SourcePage->Right.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, -lv_obj_get_width(SourcePage->obj), 0);
                 }
             }else{
-                DEBUG("PageMoveDistance Failed Not Allow No Anim To Move Page\r\n");
+                if(PageManager.Dir & LV_DIR_TOP)
+                {
+                    lv_obj_align_to(SourcePage->Up.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, -lv_obj_get_height(SourcePage->obj));
+                }
+                if(PageManager.Dir & LV_DIR_BOTTOM)
+                {
+                    lv_obj_align_to(SourcePage->Down.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, lv_obj_get_height(SourcePage->obj));
+                }
             }
+        }else{
+            DEBUG("PageMoveDistance Failed Cannot Move Self\r\n");
+        }
+        return;
+    }
+
+    switch(GetDirMode(SourcePage, Dir))
+    {
+        case LOAD_ANIM_NONE:{
+            DEBUG("PageMoveDistance Failed Not Allow No Anim To Move Page\r\n");
         }break;
 
         case LOAD_ANIM_MOVE:{
             switch(Dir)
             {
                 case PageUp:{
-                    lv_obj_set_pos(Page->obj, 0, Distance);
-                    lv_obj_align_to(GetDirObj(Page, Dir), Page->obj, LV_ALIGN_CENTER, 0, -lv_obj_get_height(Page->obj));
+                    lv_obj_set_pos(SourcePage->obj, 0, Distance);
+                    lv_obj_align_to(TargetPage->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, -lv_obj_get_height(SourcePage->obj));
                 }break;
 
                 case PageDown:{
-                    lv_obj_set_pos(Page->obj, 0, Distance);
-                    lv_obj_align_to(GetDirObj(Page, Dir), Page->obj, LV_ALIGN_CENTER, 0, lv_obj_get_height(Page->obj));
+                    lv_obj_set_pos(SourcePage->obj, 0, Distance);
+                    lv_obj_align_to(TargetPage->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, lv_obj_get_height(SourcePage->obj));
                 }break;
 
                 case PageLeft:{
-                    lv_obj_set_pos(Page->obj, Distance, 0);
-                    lv_obj_align_to(GetDirObj(Page, Dir), Page->obj, LV_ALIGN_CENTER, -lv_obj_get_width(Page->obj), 0);
+                    lv_obj_set_pos(SourcePage->obj, Distance, 0);
+                    lv_obj_align_to(TargetPage->obj, SourcePage->obj, LV_ALIGN_CENTER, -lv_obj_get_width(SourcePage->obj), 0);
                 }break;
 
                 case PageRight:{
-                    lv_obj_set_pos(Page->obj, Distance, 0);
-                    lv_obj_align_to(GetDirObj(Page, Dir), Page->obj, LV_ALIGN_CENTER, lv_obj_get_width(Page->obj), 0);
+                    lv_obj_set_pos(SourcePage->obj, Distance, 0);
+                    lv_obj_align_to(TargetPage->obj, SourcePage->obj, LV_ALIGN_CENTER, lv_obj_get_width(SourcePage->obj), 0);
                 }break;
 
                 default:{
@@ -253,7 +266,7 @@ static void PageMoveDistance(PageTypeHandle* Page, enum PageDir Dir, lv_coord_t 
 
 static void Anim_cb(void * var, int32_t Value)
 {
-    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, Value);
+    PageMoveDistance(PageManager.MoveDir, Value);
 }
 
 static void AnimReady_cb(lv_anim_t * Anim)
@@ -261,9 +274,9 @@ static void AnimReady_cb(lv_anim_t * Anim)
     DEBUG("AnimEnd_cb [%d]\r\n", Anim->repeat_delay);
     if(Anim->repeat_delay)
     {
-        PM_PageMove(Anim->repeat_delay);
+        PM_SetHomePage(GetDirPage(PageManager.HomePage, Anim->repeat_delay));
     }
-    PageMoveDistance(PageManager.HomePage, PageNone, 0);
+    PageMoveDistance(PageNone, 0);
     PageManager.MoveDir = PageNone;
     PageManager.pos_x   = 0;
     PageManager.pos_y   = 0;
@@ -272,10 +285,10 @@ static void AnimReady_cb(lv_anim_t * Anim)
 
 static void AnimToPage(enum PageDir Dir, lv_coord_t Distance)
 {
-    if(Distance == 0)
-    {
-        return;
-    }
+    // if(Distance == 0)
+    // {
+    //     return;
+    // }
 
     lv_coord_t Start = Distance, End = 0;
     switch(Dir)
@@ -306,67 +319,10 @@ static void AnimToPage(enum PageDir Dir, lv_coord_t Distance)
     lv_anim_set_repeat_delay(&PageManager.Anim, Dir);
     lv_anim_set_values(&PageManager.Anim, Start, End);
     lv_anim_set_time(&PageManager.Anim, lv_anim_speed_to_time(AnimMoveSpeed, Start, End));
-    lv_anim_set_path_cb(&PageManager.Anim, lv_anim_path_linear);
+    lv_anim_set_path_cb(&PageManager.Anim, lv_anim_path_ease_in_out);
     lv_anim_set_exec_cb(&PageManager.Anim, Anim_cb);
     lv_anim_set_ready_cb(&PageManager.Anim, AnimReady_cb);
     lv_anim_start(&PageManager.Anim);
-    return;
-    
-    switch(GetDirMode(PageManager.HomePage, Dir))
-    {
-        case LOAD_ANIM_NONE:{
-            switch (GetDirMode(PageManager.HomePage, PageManager.MoveDir))
-            {
-                case LOAD_ANIM_NONE:{
-                    DEBUG("AnimToPage Failed No Anim Mode [%d]\r\n", LOAD_ANIM_NONE);
-                }break;
-
-                case LOAD_ANIM_MOVE:{
-                    // 此处写入主页面的复位动画
-                    DEBUG("HomePage Reset\r\n");
-                    lv_anim_set_values(&PageManager.Anim, Distance, 0);
-                    lv_anim_set_time(&PageManager.Anim, lv_anim_speed_to_time(AnimMoveSpeed, Distance, 0));
-                    lv_anim_set_path_cb(&PageManager.Anim, lv_anim_path_linear);
-                    lv_anim_set_exec_cb(&PageManager.Anim, Anim_cb);
-                    lv_anim_set_ready_cb(&PageManager.Anim, AnimReady_cb);
-                    lv_anim_start(&PageManager.Anim);
-                }break;
-
-                case LOAD_ANIM_OVER:{
-                }break;
-
-                case LOAD_ANIM_LEAVE:{
-                }break;
-
-                case LOAD_ANIM_ROTATE:{
-                }break;
-
-                default:{
-                }break;
-            }
-        }break;
-
-        case LOAD_ANIM_MOVE:{
-            lv_anim_set_values(&PageManager.Anim, Distance, 0);
-            lv_anim_set_time(&PageManager.Anim, lv_anim_speed_to_time(AnimMoveSpeed, Distance, 0));
-            lv_anim_set_path_cb(&PageManager.Anim, lv_anim_path_ease_in_out);
-            lv_anim_set_exec_cb(&PageManager.Anim, Anim_cb);
-            lv_anim_set_ready_cb(&PageManager.Anim, AnimReady_cb);
-            lv_anim_start(&PageManager.Anim);
-        }break;
-
-        case LOAD_ANIM_OVER:{
-        }break;
-
-        case LOAD_ANIM_LEAVE:{
-        }break;
-
-        case LOAD_ANIM_ROTATE:{
-        }break;
-
-        default:{
-        }break;
-    }
 }
 
 static void dragend_event_handler(lv_event_t * event)
@@ -374,10 +330,11 @@ static void dragend_event_handler(lv_event_t * event)
     lv_coord_t act_x = lv_obj_get_x(PageManager.HomePage->obj);
     lv_coord_t act_y = lv_obj_get_y(PageManager.HomePage->obj);
 
-    DEBUG("LV_EVENT_RELEASED[%d] [%d] [%d] !!!\r\n\r\n",  PageManager.MoveDir, act_x, act_y);
+    DEBUG("LV_EVENT_RELEASED[%d] [%d] [%d] !!!\r\n",  PageManager.MoveDir, act_x, act_y);
     // 运动超过半个屏幕认为切换到下一个页面
     if((LV_ABS(act_x) > HorLimit) | (LV_ABS(act_y) > VerLimit))
     {
+        DEBUG("MovePage [%d]\r\n\r\n",  PageManager.MoveDir);
         AnimToPage(PageManager.MoveDir, act_y + act_x);
     }
     else
@@ -386,7 +343,7 @@ static void dragend_event_handler(lv_event_t * event)
         {
             AnimToPage(PageNone, act_y + act_x);
         }else{
-            PageMoveDistance(PageManager.HomePage, PageNone, 0);
+            PageMoveDistance(PageNone, 0);
             PageManager.MoveDir = PageNone;
             PageManager.pos_x   = 0;
             PageManager.pos_y   = 0;
@@ -419,6 +376,7 @@ static void draging_event_handler(lv_event_t * event)
 
     if(PageManager.State == LV_DIR_NONE)
     {
+        // 打断动画
         lv_anim_del(&PageManager, Anim_cb);
         PageManager.MoveDir = PageNone;
         PageManager.pos_x   = 0;
@@ -458,11 +416,11 @@ static void draging_event_handler(lv_event_t * event)
             if((PageManager.pos_x + xStart) < 0)
             {
                 PageManager.MoveDir = PageLeft;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
             }else{
                 if(PageManager.MoveDir == PageLeft)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, 0);
+                    PageMoveDistance(PageManager.MoveDir, 0);
                 }
                 PageManager.MoveDir = PageNone;
             }
@@ -473,11 +431,11 @@ static void draging_event_handler(lv_event_t * event)
             if((PageManager.pos_x + xStart) > 0)
             {
                 PageManager.MoveDir = PageRight;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
             }else{
                 if(PageManager.MoveDir == PageRight)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, 0);
+                    PageMoveDistance(PageManager.MoveDir, 0);
                 }
                 PageManager.MoveDir = PageNone;
             }
@@ -488,11 +446,11 @@ static void draging_event_handler(lv_event_t * event)
             if((PageManager.pos_y + yStart) > 0)
             {
                 PageManager.MoveDir = PageUp;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
             }else{
                 if(PageManager.MoveDir == PageUp)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, 0);
+                    PageMoveDistance(PageManager.MoveDir, 0);
                 }
                 PageManager.MoveDir = PageNone;
             }
@@ -503,11 +461,11 @@ static void draging_event_handler(lv_event_t * event)
             if((PageManager.pos_y + yStart) < 0)
             {
                 PageManager.MoveDir = PageDown;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
             }else{
                 if(PageManager.MoveDir == PageDown)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, 0);
+                    PageMoveDistance(PageManager.MoveDir, 0);
                 }
                 PageManager.MoveDir = PageNone;
             }
@@ -519,21 +477,21 @@ static void draging_event_handler(lv_event_t * event)
             {
                 if(PageManager.MoveDir == PageRight)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_x + xStart);
+                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
                 }
                 PageManager.MoveDir = PageLeft;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
             }else if((PageManager.pos_x + xStart) < 0)
             {
                 if(PageManager.MoveDir == PageLeft)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_x + xStart);
+                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
                 }
                 PageManager.MoveDir = PageRight;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
             }else{
                 PageManager.MoveDir = PageNone;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_x + xStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
             }
         }break;
 
@@ -543,21 +501,21 @@ static void draging_event_handler(lv_event_t * event)
             {
                 if(PageManager.MoveDir == PageDown)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_y + yStart);
+                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
                 }
                 PageManager.MoveDir = PageUp;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
             }else if((PageManager.pos_y + yStart) < 0)
             {
                 if(PageManager.MoveDir == PageUp)
                 {
-                    PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_y + yStart);
+                    PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
                 }
                 PageManager.MoveDir = PageDown;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
             }else{
                 PageManager.MoveDir = PageNone;
-                PageMoveDistance(PageManager.HomePage, PageManager.MoveDir, PageManager.pos_y + yStart);
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_y + yStart);
             }
         }break;
 
@@ -589,6 +547,8 @@ void PM_Init(void)
     lv_obj_set_size(PageManager.obj, WIDTH, HEIGHT);
     lv_obj_clear_flag(PageManager.obj, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scrollbar_mode(PageManager.obj, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_add_event_cb(PageManager.obj, draging_event_handler, LV_EVENT_PRESSING, NULL);
+    lv_obj_add_event_cb(PageManager.obj, dragend_event_handler, LV_EVENT_RELEASED, NULL);
 
     PageManager.BackGround = lv_obj_create(PageManager.obj);
     lv_obj_add_style(PageManager.BackGround, &PageManager.DefaultStyle, 0);
@@ -730,11 +690,6 @@ void PM_SetHomePage(PageTypeHandle* Page)
             lv_obj_add_flag(PageBuf->obj, LV_OBJ_FLAG_EVENT_BUBBLE);
             PageBuf->InitPage(PageBuf->obj);
             PageBuf->State = VAILD_AND_CREATED;
-
-            PageManager.Dir = LV_DIR_NONE;
-            lv_obj_add_event_cb(PageManager.obj, draging_event_handler, LV_EVENT_PRESSING, NULL);
-            lv_obj_add_event_cb(PageManager.obj, dragend_event_handler, LV_EVENT_RELEASED, NULL);
-            
             
             if(PageManager.HomePage != NULL)
             {
@@ -750,35 +705,34 @@ void PM_SetHomePage(PageTypeHandle* Page)
         }break;
 
         case VAILD_AND_CREATED:{
-            PageManager.Dir = LV_DIR_NONE;
             if(PageManager.HomePage != NULL)
             {
                 // Page的VAILD_AND_CREATED状态说明与HomePage相邻
                 // HomePage若存在，则清除除了自己的其他旧页面
                 DEBUG("Clear Old HomePage But Me\r\n");
-                PageBuf = GetDirPage(PageManager.HomePage, PageUp);
-                if((PageBuf != Page) & (PageBuf != NULL))
+                enum PageState StateBuf = GetDirState(PageManager.HomePage, PageUp);
+                if((StateBuf == VAILD_AND_CREATED) & (PageManager.HomePage->Up.Page != Page))
                 {
                     DEBUG("Close Old HomePage's PageUp\r\n");
                     PM_ClosePage(PageManager.HomePage, PageUp);
                 }
 
-                PageBuf = GetDirPage(PageManager.HomePage, PageDown);
-                if((PageBuf != Page) & (PageBuf != NULL))
+                StateBuf = GetDirState(PageManager.HomePage, PageDown);
+                if((StateBuf == VAILD_AND_CREATED) & (PageManager.HomePage->Down.Page != Page))
                 {
                     DEBUG("Close Old HomePage's PageDown\r\n");
                     PM_ClosePage(PageManager.HomePage, PageDown);
                 }
 
-                PageBuf = GetDirPage(PageManager.HomePage, PageLeft);
-                if((PageBuf != Page) & (PageBuf != NULL))
+                StateBuf = GetDirState(PageManager.HomePage, PageLeft);
+                if((StateBuf == VAILD_AND_CREATED) & (PageManager.HomePage->Left.Page != Page))
                 {
                     DEBUG("Close Old HomePage's PageLeft\r\n");
                     PM_ClosePage(PageManager.HomePage, PageLeft);
                 }
 
-                PageBuf = GetDirPage(PageManager.HomePage, PageRight);
-                if((PageBuf != Page) & (PageBuf != NULL))
+                StateBuf = GetDirState(PageManager.HomePage, PageRight);
+                if((StateBuf == VAILD_AND_CREATED) & (PageManager.HomePage->Right.Page != Page))
                 {
                     DEBUG("Close Old HomePage's PageRight\r\n");
                     PM_ClosePage(PageManager.HomePage, PageRight);
@@ -789,6 +743,7 @@ void PM_SetHomePage(PageTypeHandle* Page)
         default:{
         }break;
     }
+    PageManager.Dir = LV_DIR_NONE;
 
     if(Page->Up.Mode != LOAD_ANIM_NONE)
     {
@@ -915,7 +870,6 @@ void PM_SetHomePage(PageTypeHandle* Page)
             }break;
         }
     }
-
     PageManager.HomePage = Page;
 }
 
@@ -923,6 +877,8 @@ void PM_SetHomePage(PageTypeHandle* Page)
 void PM_PageMove(enum PageDir Dir)
 {
     DEBUG("PM_PageMove [%d]\r\n", Dir);
+    PageManager.MoveDir = Dir;
+    AnimToPage(Dir, 0);
     PM_SetHomePage(GetDirPage(PageManager.HomePage, Dir));
 }
 
