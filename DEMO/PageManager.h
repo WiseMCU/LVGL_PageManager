@@ -17,15 +17,14 @@
 #endif
 
 // 管理页面大小和位置
-#define WIDTH       280
-#define HEIGHT      240
-
-// 页面切换的触发阈值
-#define HorLimit    (WIDTH / 8 * 2)
-#define VerLimit    (HEIGHT / 8 * 2)
-
-// 页面切换时间
-#define AnimMoveSpeed   200
+#define WIDTH           280
+#define HEIGHT          240
+// 页面切换的触发阈值百分比(1-100),越小越容易触发
+#define PageLimit       (25)
+// 页面切换速度
+#define AnimMoveSpeed   800
+// 页面切换动画模式
+#define AnimMoveMode    lv_anim_path_ease_in_out
 
 // 页面状态
 enum PageState
@@ -44,13 +43,13 @@ enum PageDir
     // 本页面
     PageNone    = 0,
     // 上面的页面
-    PageUp,
+    PageUp      = (1 << 0),
     // 下面的页面
-    PageDown,
+    PageDown    = (1 << 1),
     // 左面的页面
-    PageLeft,
+    PageLeft    = (1 << 2),
     // 右面的页面
-    PageRight,
+    PageRight   = (1 << 3),
 };
 
 // 页面动画模式

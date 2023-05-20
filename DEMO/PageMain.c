@@ -7,6 +7,24 @@
 
 static void drag_event_handler(lv_event_t * event);
 static void event_handler(lv_event_t * event);
+
+static void test_event_handler(lv_event_t * event)
+{
+    static int a = 0;
+    DEBUG("test_event_handler [%d] !!! ", ++a);
+    lv_event_code_t code = lv_event_get_code(event);
+    if(code == LV_EVENT_COVER_CHECK) {
+        lv_area_t * area = lv_event_get_cover_area(event);
+        DEBUG("X1[%d], Y1[%d], X2[%d], Y2[%d]\r\n", area->x1, area->y1, area->x2, area->y2);
+        lv_event_set_cover_res(event, LV_COVER_RES_NOT_COVER);
+    }
+    if(code == LV_EVENT_GET_SELF_SIZE)
+    {
+        lv_point_t * point = lv_event_get_self_size_info(event);
+        DEBUG("X[%d], Y[%d]\r\n", point->x, point->y);
+    }
+}
+
 void InitMainPages(lv_obj_t* page)
 {
     // 如果要看背景需要注释掉下面两行
@@ -20,6 +38,8 @@ void InitMainPages(lv_obj_t* page)
     lv_obj_add_event_cb(btn1, drag_event_handler, LV_EVENT_PRESSING, NULL);
     lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_CLICKED, NULL);
 
+    lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_GET_SELF_SIZE, NULL);
+
     lv_obj_t * label = lv_label_create(btn1);
     lv_label_set_text(label, "Click Left");
     lv_obj_center(label);
@@ -31,6 +51,16 @@ static void event_handler(lv_event_t * event)
     if(code == LV_EVENT_CLICKED) {
         DEBUG("LEFT\r\n");
         PM_PageMove(PageLeft);
+    }
+    if(code == LV_EVENT_GET_SELF_SIZE)
+    {
+        lv_point_t * point = lv_event_get_self_size_info(event);
+        if(point == NULL)
+        {
+            DEBUG("point is null\r\n");
+        }else{
+            DEBUG("X[%d], Y[%d]\r\n", point->x, point->y);
+        }
     }
 }
 

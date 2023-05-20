@@ -19,8 +19,11 @@ struct
     PageTypeHandle* HomePage;
     // 动画结构体
     lv_anim_t Anim;
+    int32_t xStart;
+    int32_t yStart;
     int32_t pos_x;
     int32_t pos_y;
+    int32_t LimitSize;
 }PageManager;
 
 static PageTypeHandle* GetDirPage(PageTypeHandle* Page, enum PageDir Dir)
@@ -188,26 +191,27 @@ static void PageMoveDistance(enum PageDir Dir, lv_coord_t Distance)
             // 直接复位画面
             DEBUG("HomePage Reset\r\n");
             lv_obj_set_pos(SourcePage->obj, 0, 0);
-            if(PageManager.Dir & LV_DIR_HOR)
-            {
-                if(PageManager.Dir & LV_DIR_LEFT)
-                {
-                    lv_obj_align_to(SourcePage->Left.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, lv_obj_get_width(SourcePage->obj), 0);
-                }
-                if(PageManager.Dir & LV_DIR_RIGHT)
-                {
-                    lv_obj_align_to(SourcePage->Right.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, -lv_obj_get_width(SourcePage->obj), 0);
-                }
-            }else{
-                if(PageManager.Dir & LV_DIR_TOP)
-                {
-                    lv_obj_align_to(SourcePage->Up.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, -lv_obj_get_height(SourcePage->obj));
-                }
-                if(PageManager.Dir & LV_DIR_BOTTOM)
-                {
-                    lv_obj_align_to(SourcePage->Down.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, lv_obj_get_height(SourcePage->obj));
-                }
-            }
+            // 以下代码以防万一
+            // if(PageManager.Dir & LV_DIR_HOR)
+            // {
+            //     if(PageManager.Dir & LV_DIR_LEFT)
+            //     {
+            //         lv_obj_align_to(SourcePage->Left.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, lv_obj_get_width(SourcePage->obj), 0);
+            //     }
+            //     if(PageManager.Dir & LV_DIR_RIGHT)
+            //     {
+            //         lv_obj_align_to(SourcePage->Right.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, -lv_obj_get_width(SourcePage->obj), 0);
+            //     }
+            // }else{
+            //     if(PageManager.Dir & LV_DIR_TOP)
+            //     {
+            //         lv_obj_align_to(SourcePage->Up.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, -lv_obj_get_height(SourcePage->obj));
+            //     }
+            //     if(PageManager.Dir & LV_DIR_BOTTOM)
+            //     {
+            //         lv_obj_align_to(SourcePage->Down.Page->obj, SourcePage->obj, LV_ALIGN_CENTER, 0, lv_obj_get_height(SourcePage->obj));
+            //     }
+            // }
         }else{
             DEBUG("PageMoveDistance Failed Cannot Move Self\r\n");
         }
@@ -270,6 +274,7 @@ static void Anim_cb(void * var, int32_t Value)
 static void AnimReady_cb(lv_anim_t * Anim)
 {
     DEBUG("Anim Is Run Over\r\n");
+    lv_anim_set_repeat_delay(&PageManager.Anim, 0xff);
     if(Anim->repeat_delay)
     {
         PM_SetHomePage(GetDirPage(PageManager.HomePage, Anim->repeat_delay));
@@ -286,23 +291,23 @@ static void AnimToPage(enum PageDir Dir, lv_coord_t Distance)
     switch(Dir)
     {
         case PageNone:{
-            End     = 0;
+            End = 0;
         }break;
 
         case PageUp:{
-            End     = lv_obj_get_height(PageManager.HomePage->obj);
+            End = lv_obj_get_height(PageManager.HomePage->obj);
         }break;
 
         case PageDown:{
-            End     = -lv_obj_get_height(PageManager.HomePage->obj);
+            End = -lv_obj_get_height(PageManager.HomePage->obj);
         }break;
 
         case PageLeft:{
-            End     = lv_obj_get_width(PageManager.HomePage->obj);
+            End = lv_obj_get_width(PageManager.HomePage->obj);
         }break;
 
         case PageRight:{
-            End     = -lv_obj_get_width(PageManager.HomePage->obj);
+            End = -lv_obj_get_width(PageManager.HomePage->obj);
         }break;
 
         default:{
@@ -311,7 +316,7 @@ static void AnimToPage(enum PageDir Dir, lv_coord_t Distance)
     lv_anim_set_repeat_delay(&PageManager.Anim, Dir);
     lv_anim_set_values(&PageManager.Anim, Start, End);
     lv_anim_set_time(&PageManager.Anim, lv_anim_speed_to_time(AnimMoveSpeed, Start, End));
-    lv_anim_set_path_cb(&PageManager.Anim, lv_anim_path_ease_in_out);
+    lv_anim_set_path_cb(&PageManager.Anim, AnimMoveMode);
     lv_anim_set_exec_cb(&PageManager.Anim, Anim_cb);
     lv_anim_set_ready_cb(&PageManager.Anim, AnimReady_cb);
     lv_anim_start(&PageManager.Anim);
@@ -319,12 +324,45 @@ static void AnimToPage(enum PageDir Dir, lv_coord_t Distance)
 
 static void dragend_event_handler(lv_event_t * event)
 {
-    lv_coord_t act_x = lv_obj_get_x(PageManager.HomePage->obj);
-    lv_coord_t act_y = lv_obj_get_y(PageManager.HomePage->obj);
+    lv_coord_t act_x = 0, act_y = 0;
+    // 已被占用的面积
+    int ResidueSize = 0;
+    switch(GetDirMode(PageManager.HomePage, PageManager.MoveDir))
+    {
+        case LOAD_ANIM_NONE:{
+            act_x = lv_obj_get_x(PageManager.HomePage->obj);
+            act_y = lv_obj_get_y(PageManager.HomePage->obj);
+        }break;
 
-    DEBUG("LV_EVENT_RELEASED[%d] [%d] [%d] !!!\r\n", act_x, act_y, PageManager.MoveDir);
-    // 运动超过半个屏幕认为切换到下一个页面
-    if((LV_ABS(act_x) > HorLimit) | (LV_ABS(act_y) > VerLimit))
+        case LOAD_ANIM_MOVE:{
+            act_x = lv_obj_get_x(PageManager.HomePage->obj);
+            act_y = lv_obj_get_y(PageManager.HomePage->obj);
+            ResidueSize += LV_ABS((act_x + 1) * lv_obj_get_width(PageManager.HomePage->obj));
+            if(ResidueSize == 0)
+            {
+                ResidueSize += LV_ABS((act_y + 1) * lv_obj_get_height(PageManager.HomePage->obj));
+            }
+        }break;
+
+        case LOAD_ANIM_OVER:{
+            act_x = lv_obj_get_x(GetDirObj(PageManager.HomePage, PageManager.MoveDir));
+            act_y = lv_obj_get_y(GetDirObj(PageManager.HomePage, PageManager.MoveDir));
+        }break;
+
+        case LOAD_ANIM_LEAVE:{
+        }break;
+
+        case LOAD_ANIM_ROTATE:{
+        }break;
+
+        default:{
+        }break;
+    }
+    
+    DEBUG("LV_EVENT_RELEASED[%d] [%d] [%d] [%d]!!!\r\n", act_x, act_y, PageManager.MoveDir, ResidueSize);
+    DEBUG("pos_x[%d], pos_y[%d]\r\n", PageManager.pos_x, PageManager.pos_y);
+    
+    if(ResidueSize > PageManager.LimitSize)
     {
         DEBUG("MovePage [%d]\r\n",  PageManager.MoveDir);
         AnimToPage(PageManager.MoveDir, act_y + act_x);
@@ -336,7 +374,6 @@ static void dragend_event_handler(lv_event_t * event)
 
 static void draging_event_handler(lv_event_t * event)
 {
-    static lv_coord_t xStart = 0, yStart = 0;
     if(PageManager.Dir == LV_DIR_NONE)
     {
         DEBUG("No Page Can Move\r\n");
@@ -365,8 +402,8 @@ static void draging_event_handler(lv_event_t * event)
         PageManager.MoveDir = PageNone;
         PageManager.pos_x   = 0;
         PageManager.pos_y   = 0;
-        xStart = lv_obj_get_x(PageManager.HomePage->obj);
-        yStart = lv_obj_get_y(PageManager.HomePage->obj);
+        PageManager.xStart = lv_obj_get_x(PageManager.HomePage->obj);
+        PageManager.yStart = lv_obj_get_y(PageManager.HomePage->obj);
         if(LV_ABS(vect.x) > LV_ABS(vect.y))
         {
             // 横向优先
@@ -389,21 +426,74 @@ static void draging_event_handler(lv_event_t * event)
         }
     }
 
+    // if(PageManager.State == LV_DIR_NONE)
+    // {
+    //     // 打断动画
+    //     if(PageManager.Anim.repeat_delay != 0xff)
+    //     {
+    //         lv_anim_del(&PageManager, Anim_cb);
+    //         DEBUG("Anim Is Del [%d]\r\n", PageManager.MoveDir);
+    //     }else{
+    //         DEBUG("First Touch [%d]\r\n", PageManager.MoveDir);
+    //     }
+
+    //     if(PageManager.MoveDir == PageNone)
+    //     {
+    //         if(LV_ABS(vect.x) > LV_ABS(vect.y))
+    //         {
+    //             // 横向优先
+    //             if(PageManager.Dir & LV_DIR_HOR)
+    //             {
+    //                 // 允许横向运动
+    //                 PageManager.State |= (PageManager.Dir & LV_DIR_HOR);
+    //             }else{
+    //                 PageManager.State |= (PageManager.Dir & LV_DIR_VER);
+    //             }
+    //         }else{
+    //             // 纵向优先
+    //             if(PageManager.Dir & LV_DIR_VER)
+    //             {
+    //                 // 允许纵向运动
+    //                 PageManager.State |= (PageManager.Dir & LV_DIR_VER);
+    //             }else{
+    //                 PageManager.State |= (PageManager.Dir & LV_DIR_HOR);
+    //             }
+    //         }
+    //     }else{
+    //         if(PageManager.MoveDir & LV_DIR_HOR)
+    //         {
+    //             PageManager.State |= (PageManager.Dir & LV_DIR_HOR);
+    //         }else{
+    //             PageManager.State |= (PageManager.Dir & LV_DIR_VER);
+    //         }
+    //     }
+
+    //     PageManager.pos_x   = 0;
+    //     PageManager.pos_y   = 0;
+    //     PageManager.xStart = lv_obj_get_x(PageManager.HomePage->obj);
+    //     PageManager.yStart = lv_obj_get_y(PageManager.HomePage->obj);
+
+    //     DEBUG("PageManager.State [0x%02x] [0x%02x]\r\n", PageManager.State, PageManager.Dir);
+    // }
+
     PageManager.pos_x += vect.x;
     PageManager.pos_y += vect.y;
 
-    lv_coord_t xBuf = PageManager.pos_x + xStart;
-    lv_coord_t yBuf = PageManager.pos_y + yStart;
+    lv_coord_t xBuf = PageManager.pos_x + PageManager.xStart;
+    lv_coord_t yBuf = PageManager.pos_y + PageManager.yStart;
 
-    if(xBuf > WIDTH)
-    {
+    if (xBuf > WIDTH) {
         xBuf = WIDTH;
+    } else if (xBuf < -WIDTH) {
+        xBuf = -WIDTH;
     }
 
-    if(yBuf > HEIGHT)
-    {
+    if (yBuf > HEIGHT) {
         yBuf = HEIGHT;
+    } else if (yBuf < -HEIGHT) {
+        yBuf = -HEIGHT;
     }
+
 
     switch(PageManager.State)
     {
@@ -526,11 +616,20 @@ void PM_Init(void)
 {
     DEBUG("InitPageManager\r\n");
 
-    PageManager.State   = LV_DIR_NONE;
-    PageManager.Dir     = LV_DIR_NONE;
-    PageManager.MoveDir = PageNone;
-    PageManager.pos_x   = 0;
-    PageManager.pos_y   = 0;
+    PageManager.State       = LV_DIR_NONE;
+    PageManager.Dir         = LV_DIR_NONE;
+    PageManager.MoveDir     = PageNone;
+    PageManager.pos_x       = 0;
+    PageManager.pos_y       = 0;
+    PageManager.LimitSize = PageLimit;
+    if(PageManager.LimitSize > 100)
+    {
+        PageManager.LimitSize = 100;
+    }else if(PageManager.LimitSize < 1){
+        PageManager.LimitSize = 1;
+    }
+    PageManager.LimitSize   = WIDTH * HEIGHT / 100 * PageManager.LimitSize;
+    DEBUG("LimitSize [%d] !!!\r\n", PageManager.LimitSize);
 
     lv_style_init(&PageManager.DefaultStyle);
     lv_style_set_pad_all(&PageManager.DefaultStyle, 0);
@@ -555,6 +654,7 @@ void PM_Init(void)
 
     lv_anim_init(&PageManager.Anim);
     lv_anim_set_var(&PageManager.Anim, &PageManager);
+    lv_anim_set_repeat_delay(&PageManager.Anim, 0xff);
 }
 
 // 开始页面管理器
