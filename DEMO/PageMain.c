@@ -12,22 +12,15 @@ void InitMainPages(lv_obj_t* page)
     lv_obj_set_style_bg_color(page, lv_palette_main(LV_PALETTE_GREEN), 0);
     lv_obj_set_style_bg_opa(page, LV_OPA_100, 0);
 
-    lv_obj_t * obj;
-    obj = lv_obj_create(page);
-    lv_obj_set_size(obj, 100, 50);
-    lv_obj_align_to(obj, page, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_add_event_cb(obj, drag_event_handler, LV_EVENT_PRESSING, NULL);
+    lv_obj_t * btn1;
+    btn1 = lv_btn_create(page);
+    lv_obj_set_size(btn1, 100, 50);
+    lv_obj_align_to(btn1, page, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_add_event_cb(btn1, drag_event_handler, LV_EVENT_PRESSING, NULL);
+    lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_CLICKED, NULL);
 
-    lv_obj_t * label = lv_label_create(obj);
-    lv_label_set_text(label, "Drag me");
-    lv_obj_center(label);
-
-    lv_obj_t * btn1 = lv_btn_create(page);
-    lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
-    lv_obj_align_to(btn1, obj, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
-
-    label = lv_label_create(btn1);
-    lv_label_set_text(label, "Main");
+    lv_obj_t * label = lv_label_create(btn1);
+    lv_label_set_text(label, "Click Left");
     lv_obj_center(label);
 }
 

@@ -1,10 +1,8 @@
 ﻿#include "PageManager.h"
 
-extern PageTypeHandle PopPages;
-extern PageTypeHandle MainPages;
-extern PageTypeHandle MonthPages;
 struct
 {
+    // 以下的方向均指目标页面相对与主页的位置，而不是主页运动方向，与主页实际运动方向相反
     // 实际运动方向
     enum PageDir MoveDir;
     // 实际允许运动方向
@@ -188,7 +186,7 @@ static void PageMoveDistance(enum PageDir Dir, lv_coord_t Distance)
         if(Distance == 0)
         {
             // 直接复位画面
-            DEBUG("HomePage Reset ");
+            DEBUG("HomePage Reset\r\n");
             lv_obj_set_pos(SourcePage->obj, 0, 0);
             if(PageManager.Dir & LV_DIR_HOR)
             {
@@ -271,7 +269,7 @@ static void Anim_cb(void * var, int32_t Value)
 
 static void AnimReady_cb(lv_anim_t * Anim)
 {
-    DEBUG("AnimEnd_cb [%d]\r\n", Anim->repeat_delay);
+    DEBUG("Anim Is Run Over\r\n");
     if(Anim->repeat_delay)
     {
         PM_SetHomePage(GetDirPage(PageManager.HomePage, Anim->repeat_delay));
@@ -280,16 +278,10 @@ static void AnimReady_cb(lv_anim_t * Anim)
     PageManager.MoveDir = PageNone;
     PageManager.pos_x   = 0;
     PageManager.pos_y   = 0;
-    lv_anim_del(&PageManager, Anim_cb);
 }
 
 static void AnimToPage(enum PageDir Dir, lv_coord_t Distance)
 {
-    // if(Distance == 0)
-    // {
-    //     return;
-    // }
-
     lv_coord_t Start = Distance, End = 0;
     switch(Dir)
     {
@@ -330,27 +322,16 @@ static void dragend_event_handler(lv_event_t * event)
     lv_coord_t act_x = lv_obj_get_x(PageManager.HomePage->obj);
     lv_coord_t act_y = lv_obj_get_y(PageManager.HomePage->obj);
 
-    DEBUG("LV_EVENT_RELEASED[%d] [%d] [%d] !!!\r\n",  PageManager.MoveDir, act_x, act_y);
+    DEBUG("LV_EVENT_RELEASED[%d] [%d] [%d] !!!\r\n", act_x, act_y, PageManager.MoveDir);
     // 运动超过半个屏幕认为切换到下一个页面
     if((LV_ABS(act_x) > HorLimit) | (LV_ABS(act_y) > VerLimit))
     {
-        DEBUG("MovePage [%d]\r\n\r\n",  PageManager.MoveDir);
+        DEBUG("MovePage [%d]\r\n",  PageManager.MoveDir);
         AnimToPage(PageManager.MoveDir, act_y + act_x);
+    }else{
+        AnimToPage(PageNone, act_y + act_x);
     }
-    else
-    {
-        if((act_y + act_x))
-        {
-            AnimToPage(PageNone, act_y + act_x);
-        }else{
-            PageMoveDistance(PageNone, 0);
-            PageManager.MoveDir = PageNone;
-            PageManager.pos_x   = 0;
-            PageManager.pos_y   = 0;
-        }
-        PageManager.State = LV_DIR_NONE;
-        DEBUG("Anim Num [%d]\r\n", lv_anim_count_running());
-    }
+    PageManager.State = LV_DIR_NONE;
 }
 
 static void draging_event_handler(lv_event_t * event)
@@ -377,7 +358,10 @@ static void draging_event_handler(lv_event_t * event)
     if(PageManager.State == LV_DIR_NONE)
     {
         // 打断动画
-        lv_anim_del(&PageManager, Anim_cb);
+        if(lv_anim_del(&PageManager, Anim_cb))
+        {
+            DEBUG("Anim Is Del\r\n");
+        }
         PageManager.MoveDir = PageNone;
         PageManager.pos_x   = 0;
         PageManager.pos_y   = 0;
@@ -411,9 +395,8 @@ static void draging_event_handler(lv_event_t * event)
     switch(PageManager.State)
     {
         case LV_DIR_LEFT:{
-            DEBUG("LV_DIR_LEFT [%d]\r\n", PageManager.pos_x);
-            // 页面在左边，所以允许向右运动
-            if((PageManager.pos_x + xStart) < 0)
+            DEBUG("LV_DIR_LEFT [%d]\r\n", (PageManager.pos_x + xStart));
+            if((PageManager.pos_x + xStart) > 0)
             {
                 PageManager.MoveDir = PageLeft;
                 PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
@@ -427,8 +410,8 @@ static void draging_event_handler(lv_event_t * event)
         }break;
 
         case LV_DIR_RIGHT:{
-            DEBUG("LV_DIR_RIGHT [%d]\r\n", PageManager.pos_x);
-            if((PageManager.pos_x + xStart) > 0)
+            DEBUG("LV_DIR_RIGHT [%d]\r\n", (PageManager.pos_x + xStart));
+            if((PageManager.pos_x + xStart) < 0)
             {
                 PageManager.MoveDir = PageRight;
                 PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
@@ -438,6 +421,7 @@ static void draging_event_handler(lv_event_t * event)
                     PageMoveDistance(PageManager.MoveDir, 0);
                 }
                 PageManager.MoveDir = PageNone;
+                PageMoveDistance(PageManager.MoveDir, PageManager.pos_x + xStart);
             }
         }break;
 
@@ -879,7 +863,6 @@ void PM_PageMove(enum PageDir Dir)
     DEBUG("PM_PageMove [%d]\r\n", Dir);
     PageManager.MoveDir = Dir;
     AnimToPage(Dir, 0);
-    PM_SetHomePage(GetDirPage(PageManager.HomePage, Dir));
 }
 
 // 获取管理器背景层OBJ指针
